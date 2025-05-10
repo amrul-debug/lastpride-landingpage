@@ -1,0 +1,135 @@
+/* postcss-import */
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@font-face {
+  font-family: 'Pricedown';
+  src: url('/fonts/pricedown.woff2') format('woff2');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
+:root {
+  --font-family-heading: 'Pricedown', Impact, sans-serif;
+  --font-family-body: 'Roboto', Arial, sans-serif;
+  --color-primary: #4CAF50;
+  --color-secondary: #2196F3;
+  --color-accent: #FF9800;
+  --color-success: #4CAF50;
+  --color-warning: #FF9800;
+  --color-error: #F44336;
+  --color-dark: #121212;
+  --color-gray: #212121;
+  --color-light: #EEEEEE;
+}
+
+@layer base {
+  body {
+    margin: 0;
+    font-family: var(--font-family-body);
+    line-height: 1.5;
+    background-color: var(--color-dark);
+    color: var(--color-light);
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    font-family: var(--font-family-heading);
+    line-height: 1.2;
+    margin: 0 0 1rem 0;
+    text-transform: uppercase;
+  }
+
+  ::selection {
+    @apply bg-gta-green text-white;
+  }
+
+  ::-webkit-scrollbar {
+    width: 10px;
+  }
+
+  ::-webkit-scrollbar-track {
+    @apply bg-gta-gray;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    @apply bg-gta-green rounded;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    @apply bg-opacity-80;
+  }
+}
+
+@layer components {
+  .container {
+    @apply w-full max-w-7xl mx-auto px-4;
+  }
+
+  .btn {
+    @apply inline-block py-3 px-6 font-bold uppercase border-none rounded cursor-pointer transition-all duration-300;
+  }
+
+  .btn-primary {
+    @apply bg-gta-green text-white hover:bg-opacity-80;
+  }
+
+  .btn-secondary {
+    @apply bg-gta-blue text-white hover:bg-opacity-80;
+  }
+
+  .section {
+    @apply py-16;
+  }
+
+  .section-title {
+    @apply relative mb-10;
+  }
+
+  .section-title::after {
+    content: '';
+    @apply absolute bottom-[-8px] left-0 w-20 h-1 bg-gta-green;
+  }
+
+  .gta-text {
+    @apply shadow-[3px_3px_0_rgba(0,0,0,0.7)] tracking-wide;
+  }
+
+  .hide-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+
+  .hide-scrollbar::-webkit-scrollbar {
+    @apply hidden;
+  }
+
+  .nav-link {
+    @apply px-4 py-2 font-bold transition-colors duration-300;
+  }
+
+  .nav-link:hover {
+    @apply text-gta-green;
+  }
+
+  .nav-link.active {
+    @apply text-gta-green;
+  }
+
+  .stats-card {
+    @apply p-4 rounded-md bg-gta-gray flex flex-col items-center justify-center transition-all duration-300;
+  }
+
+  .stats-card:hover {
+    @apply bg-opacity-80 transform scale-105;
+  }
+
+  .feature-card {
+    @apply p-6 rounded-md bg-gta-gray border-l-4 border-gta-green transition-all duration-300;
+  }
+
+  .feature-card:hover {
+    @apply bg-opacity-80 transform translate-x-2;
+  }
+}
