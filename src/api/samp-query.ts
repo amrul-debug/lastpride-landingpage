@@ -2,18 +2,55 @@ import { API } from '../config/constants';
 import type { ServerInfo, PlayerInfo } from '../types/samp';
 import { readUInt16, readUInt32, writeUInt16, writeUInt32, writeString } from '../utils/helpers';
 
+interface SAMPResponse {
+  players?: Array<{
+    id: number;
+    name: string;
+    score: number;
+    ping: number;
+  }>;
+  info?: {
+    hostname: string;
+    players: number;
+    maxPlayers: number;
+    gamemode: string;
+    language: string;
+  };
+  ping?: number;
+}
+
+interface ResponseData {
+  error?: string;
+  players?: SAMPResponse['players'];
+  info?: SAMPResponse['info'];
+  ping?: SAMPResponse['ping'];
+}
 
 export class SAMPQuery {
   private host: string;
   private port: number;
   private readonly SAMP_HEADER = [83, 65, 77, 80];
-
+  private readonly API: {
+    PROXY_URL: string;
+    ENDPOINTS: {
+      INFO: string;
+      PLAYERS: string;
+      PING: string;
+    };
+  };
 
   constructor(host: string, port: number) {
     this.host = host;
     this.port = port;
+    this.API = {
+      PROXY_URL: 'http://localhost:5173/api',
+      ENDPOINTS: {
+        INFO: '/query/info',
+        PLAYERS: '/query/players',
+        PING: '/query/ping'
+      }
+    };
   }
-
 
   async getServerInfo(): Promise<ServerInfo | null> {
     try {
@@ -56,7 +93,6 @@ export class SAMPQuery {
     }
   }
 
-
   async getPlayers(): Promise<PlayerInfo[]> {
     try {
       const response = await this.sendUDPRequest(this.createPacket('d'));
@@ -92,7 +128,6 @@ export class SAMPQuery {
     }
   }
 
-
   async getPing(): Promise<number> {
     try {
       const pingData = crypto.getRandomValues(new Uint8Array(4));
@@ -119,7 +154,6 @@ export class SAMPQuery {
     }
   }
 
-
   private createPacket(opcode: string): Uint8Array {
     const packet = new Uint8Array(11);
 
@@ -139,15 +173,14 @@ export class SAMPQuery {
     return packet;
   }
 
-
   private async sendUDPRequest(data: Uint8Array): Promise<Uint8Array | null> {
     try {
       const opcodeChar = String.fromCharCode(data[10]);
 
       const endpointMap: Record<string, string> = {
-        'i': API.ENDPOINTS.INFO,
-        'd': API.ENDPOINTS.PLAYERS,
-        'p': API.ENDPOINTS.PING
+        'i': this.API.ENDPOINTS.INFO,
+        'd': this.API.ENDPOINTS.PLAYERS,
+        'p': this.API.ENDPOINTS.PING
       };
 
       const endpoint = endpointMap[opcodeChar];
@@ -155,7 +188,7 @@ export class SAMPQuery {
         throw new Error(`Unsupported opcode: ${opcodeChar}`);
       }
 
-      const response = await fetch(`${API.PROXY_URL}${endpoint}`, {
+      const response = await fetch(`${this.API.PROXY_URL}${endpoint}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -168,16 +201,15 @@ export class SAMPQuery {
       });
 
       if (!response.ok) {
-        const errorData = await response.json();
+        const errorData = await response.json() as { error: string };
         throw new Error(errorData.error || 'Failed to query server');
       }
 
-      const responseData = await response.json();
-
-      const responseHandlers: Record<string, (data: Uint8Array, responseData: any) => Uint8Array> = {
-        'i': this.createInfoResponse.bind(this),
-        'd': (data, rd) => this.createPlayersResponse(data, rd.players),
-        'p': this.createPingResponse.bind(this)
+      const responseData = await response.json() as ResponseData;
+      const responseHandlers: Record<string, (data: Uint8Array, responseData: ResponseData) => Uint8Array> = {
+        'i': (data, rd) => this.createInfoResponse(data, rd as unknown as ServerInfo),
+        'd': (data, rd) => this.createPlayersResponse(data, rd.players || []),
+        'p': (data, rd) => this.createPingResponse(data, rd as unknown as number)
       };
 
       return responseHandlers[opcodeChar](data, responseData);
@@ -187,14 +219,12 @@ export class SAMPQuery {
     }
   }
 
-
   private createPingResponse(request: Uint8Array, _pingValue: number): Uint8Array {
     const response = new Uint8Array(15);
     response.set(request.slice(0, 11));
     response.set(request.slice(11, 15), 11);
     return response;
   }
-
 
   private createInfoResponse(request: Uint8Array, info: ServerInfo): Uint8Array {
     const encoder = new TextEncoder();
@@ -226,7 +256,6 @@ export class SAMPQuery {
 
     return response;
   }
-
 
   private createPlayersResponse(request: Uint8Array, players: PlayerInfo[]): Uint8Array {
     const encoder = new TextEncoder();
@@ -263,7 +292,6 @@ export class SAMPQuery {
 
     return response;
   }
-
 
   private decodeString(buffer: Uint8Array, offset: number, length: number): string {
     return new TextDecoder().decode(buffer.slice(offset, offset + length));

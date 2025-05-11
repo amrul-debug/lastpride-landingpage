@@ -1,5 +1,8 @@
-
 export function formatDate(date: Date): string {
+  if (!(date instanceof Date) || isNaN(date.getTime())) {
+    throw new Error('Invalid date provided to formatDate');
+  }
+  
   return new Intl.DateTimeFormat('en-US', {
     year: 'numeric',
     month: 'long',
@@ -36,6 +39,14 @@ export function formatRelativeTime(date: Date): string {
 
 
 export function truncateString(str: string, maxLength: number): string {
+  if (typeof str !== 'string') {
+    throw new Error('First argument must be a string');
+  }
+  
+  if (typeof maxLength !== 'number' || maxLength < 0) {
+    throw new Error('Second argument must be a positive number');
+  }
+
   if (str.length <= maxLength) {
     return str;
   }
@@ -45,6 +56,10 @@ export function truncateString(str: string, maxLength: number): string {
 
 
 export function getPingColorClass(ping: number): string {
+  if (typeof ping !== 'number' || isNaN(ping)) {
+    throw new Error('Ping must be a valid number');
+  }
+
   if (ping < 0) return 'text-gray-400';
   if (ping < 100) return 'text-gta-green';
   if (ping < 200) return 'text-gta-orange';
@@ -123,4 +138,24 @@ export function writeUInt32(buffer: Uint8Array, offset: number, value: number): 
 export function writeString(buffer: Uint8Array, offset: number, stringBytes: Uint8Array): void {
   writeUInt32(buffer, offset, stringBytes.length);
   buffer.set(stringBytes, offset + 4);
+}
+
+export function validatePort(port: number): boolean {
+  return Number.isInteger(port) && port > 0 && port <= 65535;
+}
+
+export function validateHostname(hostname: string): boolean {
+  const hostnameRegex = /^[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(\.[a-zA-Z]{2,})+$/;
+  return hostnameRegex.test(hostname);
+}
+
+export function sanitizeString(str: string): string {
+  return str.replace(/[<>]/g, '');
+}
+
+export function formatNumber(num: number): string {
+  if (typeof num !== 'number' || isNaN(num)) {
+    throw new Error('Input must be a valid number');
+  }
+  return new Intl.NumberFormat('en-US').format(num);
 }

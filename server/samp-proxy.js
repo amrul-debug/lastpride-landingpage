@@ -1,4 +1,3 @@
-
 const express = require('express');
 const cors = require('cors');
 const dgram = require('dgram');
@@ -13,8 +12,22 @@ app.use(express.json());
 
 const udpClient = dgram.createSocket('udp4');
 udpClient.on('error', (err) => {
-  console.error(`UDP socket error: ${err}`);
-  udpClient.close();
+  const errorDetails = {
+    message: err.message,
+    code: err.code,
+    stack: err.stack,
+    timestamp: new Date().toISOString()
+  };
+  
+  console.error('UDP socket error:', JSON.stringify(errorDetails, null, 2));
+  
+  // Attempt to recover the socket
+  try {
+    udpClient.close();
+    udpClient.bind();
+  } catch (recoveryError) {
+    console.error('Failed to recover UDP socket:', recoveryError);
+  }
 });
 
 
